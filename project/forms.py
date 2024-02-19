@@ -81,7 +81,27 @@ class CompanyForm(forms.ModelForm):
         elif self.instance.pk:
             self.fields['municipality'].queryset = self.instance.district.municipality_set.order_by('name')
 
+class OfficerForm(forms.ModelForm):
+    # Adding the company field to the form with a queryset
+    company = forms.ModelChoiceField(queryset=Company.objects.all(), empty_label=None)
+
+    class Meta:
+        model = Officer
+        fields = ['company', 'designation', 'name', 'phone', 'office', 'email']
+
+    def __init__(self, *args, **kwargs):
+        super(OfficerForm, self).__init__(*args, **kwargs)
         
+        # Customize the widgets and add additional attributes as needed
+        self.fields['company'].widget = forms.Select(attrs={'class': 'form-control'})
+        self.fields['designation'].widget = forms.TextInput(attrs={'class': 'form-control'})
+        self.fields['name'].widget = forms.TextInput(attrs={'class': 'form-control'})
+        self.fields['phone'].widget = forms.TextInput(attrs={'class': 'form-control'})  
+        self.fields['office'].widget = forms.TextInput(attrs={'class': 'form-control'})
+        self.fields['email'].widget = forms.EmailInput(attrs={'class': 'form-control'})
+
+        # Adding a queryset for the company field
+        self.fields['company'].queryset = Company.objects.all()    
         
 class PaperForm(forms.ModelForm):
     TYPE_CHOICES = (

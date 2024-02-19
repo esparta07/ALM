@@ -21,12 +21,64 @@
 
 <div class="card" style="background-color: #F9E4C8; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);">
   <div class="card-body text-black">
-    <h4 >
-      NEW COMPANY
-    </h4>
-    <br />
+    <div class="card-body">
+      <div class="row">
+        <div class="col-lg-6">
+            <h4><i class="mdi mdi-briefcase">&nbsp;</i>ADD COMPANY</h4>
+        </div>
+        <div class="col-lg-6 text-right">
+            <button class="btn btn-primary ml-1" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+              <i class="mdi mdi-account"></i>&nbsp;ADD OFFICER
+            </button>
+        </div>
+    </div>
+    <div class="collapse mt-2" id="collapseExample">
+      <div class="card card-body"  style="background-color: rgba(255, 255, 255, 0.5);">
+        <form method="POST" action="" id="officer-form">
+          {% csrf_token %}
+          <div class="row">
+        
+            <div class="col-lg-6">
+              <div class="form-group">
+                <label for="company"><h5>Company:</h5></label>
+                {{ officer_form.company }}
+              </div>
+    
+              <div class="form-group">
+                <label for="office"><h5>Office:</h5></label>
+                {{ officer_form.office }}
+              </div>
+    
+              <div class="form-group">
+                <label for="designation"><h5>Designation:</h5></label>
+                {{ officer_form.designation }}
+              </div>  
+            </div>
+            <div class="col-lg-6">
+              <div class="form-group">
+                <label for="name"><h5>Name:</h5></label>
+                {{ officer_form.name }}
+              </div>
+              <div class="form-group">
+                <label for="phone"><h5>Phone:</h5></label>
+                {{ officer_form.phone }}
+              </div>
+              <div class="form-group">
+                <label for="email"><h5>Email:</h5></label>
+                {{ officer_form.email }}
+              </div>
+            </div>
+          </div>
+          <br>
+          <button class="btn btn-warning btn-lg waves-effect waves-light" type="submit">Submit</button>
+        </form>  
+      </div>
+    </div>
+
+    
     <form method="POST" action="" id="company-form" data-districts-url="{% url 'get_districts' %}" 
-    data-municipalities-url="{% url 'get_municipalities' %}">
+    data-municipalities-url="{% url 'get_municipalities' %}" class="mt-4">
+
       {% csrf_token %}
 
       <div class="row">
@@ -72,7 +124,7 @@
           </div>
         </div>
       </div>
-      <br />
+      <br>
       <button class="btn btn-warning btn-lg waves-effect waves-light" type="submit">Submit</button>
     </form>
   </div>
@@ -123,6 +175,38 @@
     });
 
     // Form submission
+    $(document).on('submit', '#officer-form', function (e) {
+      e.preventDefault();
+      $.ajax({
+        type: 'POST',
+        url: '{% url "add_company" %}',
+        data: {
+          name: $("#id_name").val(),
+          designation: $("#id_designation").val(),
+          office: $("#id_office").val(),
+          company: $("#id_company").val(),
+          email: $("#id_email").val(),
+          phone: $("#id_phone").val(),
+          csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
+        },
+        success: function (data) {
+          // Update the success message dynamically
+          $('#success-message').html('<div class="alert alert-success">Officer was added successfully</div>');
+
+          // Reset the form elements
+          $('#officer-form').trigger('reset');
+
+          // Set a timer to hide the success message after 3 seconds (3000 milliseconds)
+          setTimeout(function() {
+            $('#success-message').empty(); // Remove the content of the success message
+          }, 3000);
+        },
+
+        error: function (xhr, textStatus, errorThrown) {
+          console.log("Error:", errorThrown);
+        }
+      });
+    });
     $(document).on('submit', '#company-form', function (e) {
       e.preventDefault();
       $.ajax({

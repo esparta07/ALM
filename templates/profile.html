@@ -43,6 +43,22 @@
             
           </div>
         </div>
+        {% if user.role == 1 %}
+        <hr>
+        <div class="row">
+          <div class="col-sm-3">
+              <h6 class="mb-0">Assigned Provinces</h6>
+          </div>
+          <div class="col-sm-9">
+              {% for province_admin in user.provinceadmin_set.all %}
+                  {{ province_admin.province.name }}
+                  {% if not forloop.last %}, {% endif %}
+              {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      
+        
       </div>
     </div>
 {% endblock content %}

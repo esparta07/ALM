@@ -2,14 +2,14 @@ from django.db.models import F, Sum
 from django.db.models.functions import Coalesce
 from .models import Advs,Newspaper,Province,District,Municipality,Company,Officer
 from account.models import ProvinceAdmin,Action
-from .forms import NewspaperForm,CompanyForm,PaperForm,ActionForm
+from .forms import NewspaperForm,CompanyForm,PaperForm,ActionForm,OfficerForm
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib import messages
 from .filters import CompanyFilter
 from django.http import JsonResponse,HttpResponse
 from datetime import date
-
-
+from account.utils import check_role_admin, check_role_user
+from django.contrib.auth.decorators import login_required, user_passes_test
 
 def calculate_adv_spend(company_id):
     # Filter Advs by the given company_id and annotate with the spend of type * size
@@ -22,7 +22,7 @@ def calculate_adv_spend(company_id):
 
     return total_spend
 
-
+@login_required(login_url='login')
 def add_lead(request):
     if request.method == 'POST':
         company_id = request.POST.get('company')
@@ -70,24 +70,37 @@ def add_lead(request):
     }
     return render(request, 'add_lead.html', context)
 
+@login_required(login_url='login')
 def add_company(request):
     if request.method == 'POST':
         form = CompanyForm(request.POST)
-        if form.is_valid():
-            # Save the form data if it's valid
-            form.save()
-           
+        officer_form = OfficerForm(request.POST)
+        
+        if form.is_valid() or officer_form.is_valid():
+            # Save the company form if it's valid
+            if form.is_valid():
+                company = form.save()
+
+            # Save the officer form if it's valid
+            if officer_form.is_valid():
+                officer = officer_form.save(commit=False)
+                if 'company' in locals():
+                    officer.company = company
+                officer.save()
+
             return redirect('add_company')
     else:
-        # If the request method is not POST, create an instance of the form
+        # If the request method is not POST, create instances of the forms
         form = CompanyForm()
+        officer_form = OfficerForm()
 
     context = {
         'form': form,
+        'officer_form': officer_form,
     }
     return render(request, 'add_company.html', context)
 
-
+@login_required(login_url='login')
 def add_newspaper(request):
     if request.method == 'POST':
         form = PaperForm(request.POST)
@@ -106,7 +119,8 @@ def add_newspaper(request):
     }
     return render(request, 'add_newspaper.html', context)
 
-
+@login_required(login_url='login')
+@user_passes_test(check_role_admin)
 def company(request):
     admin = request.user
 
@@ -142,7 +156,8 @@ def company(request):
 
     return render(request, 'company_list.html', context)
 
-
+@login_required(login_url='login')
+@user_passes_test(check_role_admin)
 def company_profile(request, company_id):
     company = get_object_or_404(Company, id=company_id)
     officers = Officer.objects.filter(company=company)
@@ -169,9 +184,6 @@ def company_profile(request, company_id):
     }
     return render(request, 'company_profile.html', context)
 
-
-    
-
 def get_districts(request):
     province_id = request.GET.get('province_id')
     districts = District.objects.filter(province_id=province_id).order_by('name')
@@ -193,7 +205,7 @@ def get_municipalities(request):
 
     return HttpResponse(options)
 
-
+@login_required(login_url='login')
 def profile(request):
     
     return render(request , 'profile.html')
