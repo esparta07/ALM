@@ -160,6 +160,9 @@
                             <h5 class="m-0 font-size-15">
                                 <a class="d-block pt-2 pb-2 text-dark" data-toggle="collapse" href="#action_collapse{{ forloop.counter }}" aria-expanded="true" aria-controls="action_collapse{{ forloop.counter }}">
                                     {{ action.date }}&nbsp;&nbsp;&nbsp;&nbsp; {{ action.officer.name }}, {{ action.officer.designation }}
+                                    {% if action.officer.is_active == False %}
+                                    (Inactive)
+                                    {% endif %}
                                     <span class="float-right">{{ action.admin }}<i class="mdi mdi-chevron-down accordion-arrow"></i></span>
                                 </a>
                             </h5>
@@ -178,12 +181,15 @@
             <h4 class="p-1" style="background-color:#F9CF93;">Contact</h4>
             <br>
             <div id="officer_accordion" class="custom-accordion mb-4">
+                
+                
                 {% for officer in officers %}
+                {% if officer.is_active == True %}
                     <div class="card mb-0">
                         <div class="card-header" id="officer_heading{{ forloop.counter }}">
                             <h5 class="m-0 font-size-15">
                                 <a class="d-block pt-2 pb-2 text-dark" data-toggle="collapse" href="#officer_collapse{{ forloop.counter }}" aria-expanded="true" aria-controls="officer_collapse{{ forloop.counter }}">
-                                    {{ officer.name }} - {{ officer.designation }} <span class="float-right"><i class="mdi mdi-chevron-down accordion-arrow"></i></span>
+                                    {{ officer.name }} - {{ officer.designation }} <i class="mdi mdi-circle mt-2" style="color: #8be78b; font-size: 12px;"></i></i> <span class="float-right"><i class="mdi mdi-chevron-down accordion-arrow"></i></span>
                                 </a>
                             </h5>
                         </div>
@@ -197,7 +203,9 @@
                             </div>
                         </div>
                     </div> <!-- end card-->
+                    {% endif %}
                 {% endfor %}
+                
             </div> <!-- end custom accordions-->
         </div> <!-- end col -->
         

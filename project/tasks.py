@@ -73,6 +73,58 @@ def generate_and_send_excel(self):
                 # Send the email
                 email.send()
                 
+                # Clean up the generated Excel file
+                os.remove(excel_file_path)
+                
     except Exception as e:
         logger.error(f"Error in generate_and_send_excel: {e}")
+        raise
+
+@shared_task(bind=True)
+def generate_and_send_compiled_excel(self):
+    try:
+        # Get all objects of Advs
+        advs_data = Advs.objects.values(
+            'company__name',
+            'company__province__name',
+        ).annotate(
+            publish_frequency=Count('company'),
+            budget_spent=Sum('balance'),
+            size=Sum('size')
+        )
+
+        # Create a DataFrame from the queried data
+        df = pd.DataFrame(advs_data, columns=["company__name", "company__province__name", "publish_frequency", "budget_spent", "size"])
+
+        # Rename columns to match your requirements
+        df = df.rename(columns={
+            'company__name': 'Customer Name',
+            'company__province__name': 'Province',
+            'publish_frequency': 'Publish Frequency',
+            'budget_spent': 'Budget Spent',
+            'size': 'Size (CC)'
+        })
+
+        # Create a single Excel file for all provinces
+        excel_file_path = 'daily_digest_all_provinces.xlsx'
+        df.to_excel(excel_file_path, index=False)
+
+        # Email content
+        subject = 'Daily Digest - All Provinces'
+        message = 'Here is the daily digest for all provinces.'
+
+        # Attach the Excel file
+        from_email = settings.DEFAULT_FROM_EMAIL
+        to_email = 'amail2manoj@gmail.com' 
+        email = EmailMessage(subject, message, from_email, [to_email])
+        email.attach_file(excel_file_path)
+
+        # Send the email
+        email.send()
+
+        # Clean up the generated Excel file
+        os.remove(excel_file_path)
+
+    except Exception as e:
+        logger.error(f"Error in generate_and_send_compiled_excel: {e}")
         raise

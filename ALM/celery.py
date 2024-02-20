@@ -16,10 +16,15 @@ app.config_from_object(settings, namespace='CELERY')
 # Celery Beat Settings
 app.conf.beat_schedule = {
     'run-generate-and-send-excel-task': {
-        'task': 'project.tasks.generate_and_send_excel',  
-        'schedule': crontab(hour=9, minute=30),  # Run daily at 9:30am
+        'task': 'project.tasks.generate_and_send_excel',
+        'schedule': crontab(hour=16, minute=33),  # Run daily at 9:30am
+    },
+    'run-generate-and-send-compiled-excel-task': {
+        'task': 'project.tasks.generate_and_send_compiled_excel',
+        'schedule': crontab(hour=16, minute=33),  # Run daily at 9:250am 
     },
 }
+
 
 app.autodiscover_tasks()
 

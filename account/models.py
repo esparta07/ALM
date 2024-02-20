@@ -73,15 +73,13 @@ class User(AbstractBaseUser):
 User = get_user_model()
 
 class ProvinceAdmin(models.Model):
-    admin = models.ForeignKey(
-        User, 
-        on_delete=models.CASCADE,
-        limit_choices_to={'role': User.ADMIN}
-    )
-    province = models.OneToOneField(Province, on_delete=models.CASCADE)
-    
+    admin = models.ManyToManyField(User, limit_choices_to={'role': User.ADMIN})
+    province = models.ForeignKey(Province, on_delete=models.CASCADE)
+
     def __str__(self):
-        return f"{self.admin}, {self.province}"
+        return f" {self.province}"
+
+
 
 
 class Action(models.Model):

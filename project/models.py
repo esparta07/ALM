@@ -53,6 +53,7 @@ class Officer(models.Model):
     phone = models.CharField(max_length=15)
     office = models.CharField(max_length=100)
     email = models.EmailField()
+    is_active=models.BooleanField(default=True)
 
     def __str__(self):
         return f"{self.name}, {self.designation}"
