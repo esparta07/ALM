@@ -1,25 +1,22 @@
 from celery import shared_task
 from django.core.mail import EmailMessage
 from django.db.models import Count, Sum
-from datetime import datetime
+from django.urls import reverse
 from .models import Advs
-from account.models import ProvinceAdmin, User
+from account.models import ProvinceAdmin
 from django.contrib.auth import get_user_model
-import pandas as pd
-import os
-from django.apps import apps
-from celery import Celery
 from django.conf import settings
 import logging
+from django.template.loader import render_to_string
+from django.core.mail import EmailMultiAlternatives
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
-from io import BytesIO  # Import BytesIO
+
 
 @shared_task(bind=True)
-def generate_and_send_excel(self):
-    
+def generate_and_send_html_tables(self):
     try:
         # Get all objects of Advs
         advs_data = Advs.objects.values(
@@ -31,60 +28,75 @@ def generate_and_send_excel(self):
             size=Sum('size')
         )
 
-        # Create a DataFrame from the queried data
-        df = pd.DataFrame(advs_data, columns=["company__name", "company__province__name", "publish_frequency", "budget_spent", "size"])
+        # Create a dictionary of DataFrames for each province
+        province_tables = {}
+        for row in advs_data:
+            province_name = row['company__province__name']
+            if province_name not in province_tables:
+                province_tables[province_name] = []
 
-        # Rename columns to match your requirements
-        df = df.rename(columns={
-            'company__name': 'Customer Name',
-            'company__province__name': 'Province',
-            'publish_frequency': 'Publish Frequency',
-            'budget_spent': 'Budget Spent',
-            'size': 'Size (CC)'
-        })
-
-        # Group by 'Province' and create a dictionary of DataFrames
-        province_dfs = {}
-        for province, province_data in df.groupby('Province'):
-            province_dfs[province] = province_data
+            province_tables[province_name].append(row)
 
         # Fetch admin province objects
         admin_provinces = ProvinceAdmin.objects.all()
 
-        # Iterate through admin provinces and send emails
+        # Combine all tables in one list
+        all_tables = []
+        all_emails = []
         for admin_province in admin_provinces:
             province_name = admin_province.province.name
 
-            if province_name in province_dfs:
-                # Attach the corresponding DataFrame to the email
-                province_df = province_dfs[province_name]
-                excel_file_path = f'daily_digest_{province_name}.xlsx'
-                province_df.to_excel(excel_file_path, index=False)
+            if province_name in province_tables:
+                # Extract the corresponding table for the admin province
+                province_table = province_tables[province_name]
 
-                # Email content
-                subject = 'Daily Digest'
-                message = f'Here is the daily digest for {admin_province}.'
-                
-                # Attach the Excel file
-                from_email = settings.DEFAULT_FROM_EMAIL
-                email = EmailMessage(subject, message, from_email, [admin_province.admin.email])
-                email.attach_file(excel_file_path)
+                # Log the content of the first row of the table
+                logger.info(f"Province Table for {province_name}: {province_table[0]}")
 
-                # Send the email
-                email.send()
-                
-                # Clean up the generated Excel file
-                os.remove(excel_file_path)
-                
+                # Retrieve an actual admin instance from the manager
+                admin_instance = admin_province.admin.first()
+
+                if admin_instance:
+                    admin_email = admin_instance.email if hasattr(admin_instance, 'email') else None
+
+                    if admin_email:
+                        all_tables.append({'province_name': province_name, 'table_data': province_table})
+                        all_emails.append(admin_email)
+
+        if all_tables:
+            # Prepare the data for rendering in the template
+            context = {
+                'all_tables': all_tables,
+            }
+
+            # Render the HTML content using a template
+            html_content = render_to_string('emails/admin_template.html', context)
+
+            # Email content
+            subject = 'Combined Daily Digest'
+            message = 'Here is the combined daily digest.'
+
+            # Create an EmailMultiAlternatives object
+            from_email = settings.DEFAULT_FROM_EMAIL
+            email = EmailMultiAlternatives(subject, message, from_email, all_emails)
+            
+            # Attach the HTML content
+            email.attach_alternative(html_content, "text/html")
+
+            # Send the email
+            email.send()
+
     except Exception as e:
-        logger.error(f"Error in generate_and_send_excel: {e}")
+        logger.error(f"Error in generate_and_send_combined_html_tables: {e}")
         raise
+
 
 @shared_task(bind=True)
 def generate_and_send_compiled_excel(self):
     try:
         # Get all objects of Advs
         advs_data = Advs.objects.values(
+            'company__id',
             'company__name',
             'company__province__name',
         ).annotate(
@@ -93,38 +105,37 @@ def generate_and_send_compiled_excel(self):
             size=Sum('size')
         )
 
-        # Create a DataFrame from the queried data
-        df = pd.DataFrame(advs_data, columns=["company__name", "company__province__name", "publish_frequency", "budget_spent", "size"])
-
-        # Rename columns to match your requirements
-        df = df.rename(columns={
-            'company__name': 'Customer Name',
-            'company__province__name': 'Province',
-            'publish_frequency': 'Publish Frequency',
-            'budget_spent': 'Budget Spent',
-            'size': 'Size (CC)'
-        })
-
-        # Create a single Excel file for all provinces
-        excel_file_path = 'daily_digest_all_provinces.xlsx'
-        df.to_excel(excel_file_path, index=False)
+        # Create a list of dictionaries containing the data
+        table_content = []
+        for row in advs_data:
+            company_link = reverse('company_profile', kwargs={'company_id': row['company__id']})
+            # Adjust the URL to match 
+            company_link = f"{settings.BASE_URL}{company_link.replace('/lead/company/', '/lead/company/')}"
+            table_content.append({
+                'customer_name': row['company__name'],
+                'customer_link': company_link,
+                'province': row['company__province__name'],
+                'publish_frequency': row['publish_frequency'],
+                'budget_spent': row['budget_spent'],
+                'size': row['size'],
+            })
 
         # Email content
         subject = 'Daily Digest - All Provinces'
-        message = 'Here is the daily digest for all provinces.'
-
-        # Attach the Excel file
-        from_email = settings.DEFAULT_FROM_EMAIL
-        to_email = 'amail2manoj@gmail.com' 
-        email = EmailMessage(subject, message, from_email, [to_email])
-        email.attach_file(excel_file_path)
+        message = render_to_string('/emails/email_template.html', {
+            'table_content': table_content
+        })
 
         # Send the email
+        from_email = settings.DEFAULT_FROM_EMAIL
+        to_email = 'amail2manoj@gmail.com'
+        email = EmailMessage(subject, message, from_email, [to_email])
+        email.content_subtype = 'html'
         email.send()
-
-        # Clean up the generated Excel file
-        os.remove(excel_file_path)
+        
+        return "Email sent successfully"
 
     except Exception as e:
-        logger.error(f"Error in generate_and_send_compiled_excel: {e}")
-        raise
+        logger.error(f"Error in generate_and_send_compiled_excel: {e}", exc_info=True)
+        return f"Error: {e}"
+

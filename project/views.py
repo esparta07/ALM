@@ -210,7 +210,18 @@ def profile(request):
     
     return render(request , 'profile.html')
 
+# from project.tasks import generate_and_send_html_tables
+# def test_email_view(request):
+#     try:
+#         # Call the Celery task
+#         generate_and_send_html_tables.delay()
 
+#         # You can customize the response message if needed
+#         return HttpResponse("Email task is being processed. Check your email.")
+
+#     except Exception as e:
+#         # Handle exceptions appropriately
+#         return HttpResponse(f"Error: {e}")
 
 
 

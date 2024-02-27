@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Combined Daily Digest</title>
+    <style>
+        table {
+            font-family: Arial, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        /* Add a style for hyperlinks */
+        td a {
+            color: #0000EE;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h2>Combined Daily Digest</h2>
+
+    {% for table in all_tables %}
+        <h3>{{ table.province_name }}</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Customer Name</th>
+                    <th>Province</th>
+                    <th>Publish Frequency</th>
+                    <th>Budget Spent</th>
+                    <th>Size (CC)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for table_row in table.table_data %}
+                    <tr>
+                        <td>{{ table_row.company__name }}</td>
+                        <td>{{ table_row.company__province__name }}</td>
+                        <td>{{ table_row.publish_frequency }}</td>
+                        <td>{{ table_row.budget_spent }}</td>
+                        <td>{{ table_row.size }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endfor %}
+</body>
+</html>

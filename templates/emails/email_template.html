@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Digest - All Provinces</title>
+    <style>
+        table {
+            font-family: Arial, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        /* Add a style for hyperlinks */
+        td a {
+            color: #0000EE;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h2>Daily Digest - All Provinces</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Customer Name</th>
+                <th>Province</th>
+                <th>Publish Frequency</th>
+                <th>Budget Spent</th>
+                <th>Size (CC)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in table_content %}
+                <tr>
+                    <td><a href="{{ row.customer_link }}" target="_blank">{{ row.customer_name }}</a></td>
+                    <td>{{ row.province }}</td>
+                    <td>{{ row.publish_frequency }}</td>
+                    <td>{{ row.budget_spent }}</td>
+                    <td>{{ row.size }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
