@@ -75,25 +75,16 @@ def add_company(request):
     if request.method == 'POST':
         form = CompanyForm(request.POST)
         officer_form = OfficerForm(request.POST)
-        
-        if form.is_valid() or officer_form.is_valid():
-            # Save the company form if it's valid
-            if form.is_valid():
-                company = form.save()
-
-            # Save the officer form if it's valid
-            if officer_form.is_valid():
-                officer = officer_form.save(commit=False)
-                if 'company' in locals():
-                    officer.company = company
-                officer.save()
-
+        if form.is_valid():
+            # Save the form data if it's valid
+            form.save()
+            messages.success(request, 'Company was added Succesfully')
+            
             return redirect('add_company')
     else:
-        # If the request method is not POST, create instances of the forms
+        # If the request method is not POST, create an instance of the form
         form = CompanyForm()
         officer_form = OfficerForm()
-
     context = {
         'form': form,
         'officer_form': officer_form,
@@ -161,26 +152,33 @@ def company(request):
 def company_profile(request, company_id):
     company = get_object_or_404(Company, id=company_id)
     officers = Officer.objects.filter(company=company)
-    actions = Action.objects.filter(company=company)
+    actions = Action.objects.filter(company=company).order_by('-date')
     user = request.user
     today = date.today()
 
     if request.method == 'POST':
         form = ActionForm(company, request.POST)
-        if form.is_valid():
+        officer_form = OfficerForm(request.POST, initial={'company': company})  # Initialize officer_form with POST data
+        if form.is_valid() :
             action = form.save(commit=False)
             action.company = company
             action.date = today
             action.admin = user
-            form.save()  # Assuming you have a save method in your ActionForm
+            form.save()
+
+            
+
+            return redirect('company_profile', company_id=company.id)
     else:
         form = ActionForm(company)
+        officer_form = OfficerForm(initial={'company': company})  # Initialize officer_form with default values
 
     context = {
         'company': company,
         'officers': officers,
         'actions': actions,
         'form': form,
+        'officer_form': officer_form,
     }
     return render(request, 'company_profile.html', context)
 
@@ -209,6 +207,21 @@ def get_municipalities(request):
 def profile(request):
     
     return render(request , 'profile.html')
+
+@login_required(login_url='login')
+@user_passes_test(check_role_admin)
+def submit_officer_form(request):
+    if request.method == 'POST':
+        form = OfficerForm(request.POST)
+
+        if form.is_valid():
+            officer = form.save()
+            return JsonResponse({'status': 'success', 'message': 'Officer was added successfully'})
+        else:
+            return JsonResponse({'status': 'error', 'errors': form.errors.as_json()}, status=400)
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+
 
 # from project.tasks import generate_and_send_html_tables
 # def test_email_view(request):

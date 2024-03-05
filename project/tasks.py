@@ -122,7 +122,7 @@ def generate_and_send_compiled_excel(self):
 
         # Email content
         subject = 'Daily Digest - All Provinces'
-        message = render_to_string('/emails/email_template.html', {
+        message = render_to_string('emails/email_template.html', {
             'table_content': table_content
         })
 

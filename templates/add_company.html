@@ -27,10 +27,11 @@
             <h4><i class="mdi mdi-briefcase">&nbsp;</i>ADD COMPANY</h4>
         </div>
         <div class="col-lg-6 text-right">
-            <button class="btn btn-primary ml-1" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
-              <i class="mdi mdi-account"></i>&nbsp;ADD OFFICER
-            </button>
-        </div>
+          <button class="btn btn-primary ml-1" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+            <i class="mdi mdi-account"></i>&nbsp;ADD OFFICER
+          </button>
+      </div>
+        
     </div>
     <div class="collapse mt-2" id="collapseExample">
       <div class="card card-body"  style="background-color: rgba(255, 255, 255, 0.5);">
@@ -74,6 +75,7 @@
         </form>  
       </div>
     </div>
+    
 
     
     <form method="POST" action="" id="company-form" data-districts-url="{% url 'get_districts' %}" 
@@ -174,55 +176,13 @@
       });
     });
 
-    // Form submission
-    $(document).on('submit', '#officer-form', function (e) {
-      e.preventDefault();
-      $.ajax({
-        type: 'POST',
-        url: '{% url "add_company" %}',
-        data: {
-          name: $("#id_name").val(),
-          designation: $("#id_designation").val(),
-          office: $("#id_office").val(),
-          company: $("#id_company").val(),
-          email: $("#id_email").val(),
-          phone: $("#id_phone").val(),
-          csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
-        },
-        success: function (data) {
-          // Update the success message dynamically
-          $('#success-message').html('<div class="alert alert-success">Officer was added successfully</div>');
-
-          // Reset the form elements
-          $('#officer-form').trigger('reset');
-
-          // Set a timer to hide the success message after 3 seconds (3000 milliseconds)
-          setTimeout(function() {
-            $('#success-message').empty(); // Remove the content of the success message
-          }, 3000);
-        },
-
-        error: function (xhr, textStatus, errorThrown) {
-          console.log("Error:", errorThrown);
-        }
-      });
-    });
+    // Company form submission
     $(document).on('submit', '#company-form', function (e) {
       e.preventDefault();
       $.ajax({
         type: 'POST',
         url: '{% url "add_company" %}',
-        data: {
-          name: $("#id_name").val(),
-          category: $("#id_category").val(),
-          sub_category: $("#id_sub_category").val(),
-          province: $("#id_province").val(),
-          district: $("#id_district").val(),
-          municipality: $("#id_municipality").val(),
-          website: $("#id_website").val(),
-          address: $("#id_address").val(),
-          csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
-        },
+        data: $(this).serialize(),
         success: function (data) {
           // Update the success message dynamically
           $('#success-message').html('<div class="alert alert-success">Company was added successfully</div>');
@@ -235,11 +195,35 @@
             $('#success-message').empty(); // Remove the content of the success message
           }, 3000);
         },
-
         error: function (xhr, textStatus, errorThrown) {
           console.log("Error:", errorThrown);
         }
       });
+    });
+  });
+
+  // Officer form submission
+  $(document).on('submit', '#officer-form', function (e) {
+    e.preventDefault();
+    $.ajax({
+      type: 'POST',
+      url: '{% url "submit_officer_form" %}',
+      data: $(this).serialize(),
+      success: function (data) {
+        // Update the success message dynamically
+        $('#success-message').html('<div class="alert alert-success">Officer was added successfully</div>');
+
+        // Reset the form elements
+        $('#officer-form').trigger('reset');
+
+        // Set a timer to hide the success message after 3 seconds (3000 milliseconds)
+        setTimeout(function() {
+          $('#success-message').empty(); // Remove the content of the success message
+        }, 3000);
+      },
+      error: function (xhr, textStatus, errorThrown) {
+        console.log("Error:", errorThrown);
+      }
     });
   });
 </script>
