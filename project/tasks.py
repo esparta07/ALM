@@ -128,8 +128,8 @@ def generate_and_send_compiled_excel(self):
 
         # Send the email
         from_email = settings.DEFAULT_FROM_EMAIL
-        to_email = 'amail2manoj@gmail.com'
-        email = EmailMessage(subject, message, from_email, [to_email])
+        to_email = ['amail2manoj@gmail.com', 'advertisingjpmail@gmail.com']
+        email = EmailMessage(subject, message, from_email, to_email)
         email.content_subtype = 'html'
         email.send()
         
