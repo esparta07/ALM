@@ -46,7 +46,7 @@
             <tbody>
                 {% for table_row in table.table_data %}
                     <tr>
-                        <td>{{ table_row.company__name }}</td>
+                        <td><a href="{{ table_row.company_link }}" target="_blank">{{ table_row.company__name }}</a></td>
                         <td>{{ table_row.company__province__name }}</td>
                         <td>{{ table_row.publish_frequency }}</td>
                         <td>{{ table_row.budget_spent }}</td>

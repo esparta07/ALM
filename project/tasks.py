@@ -20,6 +20,7 @@ def generate_and_send_html_tables(self):
     try:
         # Get all objects of Advs
         advs_data = Advs.objects.values(
+            'company__id',
             'company__name',
             'company__province__name',
         ).annotate(
@@ -31,12 +32,16 @@ def generate_and_send_html_tables(self):
         # Create a dictionary of DataFrames for each province
         province_tables = {}
         for row in advs_data:
+            company_link = reverse('company_profile', kwargs={'company_id': row['company__id']})
+            company_link = f"{settings.BASE_URL}{company_link}"
             province_name = row['company__province__name']
+
+            # Append the row with the link to province_tables
             if province_name not in province_tables:
                 province_tables[province_name] = []
 
-            province_tables[province_name].append(row)
-
+            row_with_link = {'company_link': company_link, **row}
+            province_tables[province_name].append(row_with_link)
         # Fetch admin province objects
         admin_provinces = ProvinceAdmin.objects.all()
 
@@ -60,8 +65,7 @@ def generate_and_send_html_tables(self):
                     admin_email = admin_instance.email if hasattr(admin_instance, 'email') else None
 
                     if admin_email:
-                        all_tables.append({'province_name': province_name, 'table_data': province_table})
-                        all_emails.append(admin_email)
+                        all_tables.append({'province_name': province_name, 'table_data': province_table, 'admin_email': admin_email})
 
         if all_tables:
             # Prepare the data for rendering in the template
@@ -78,13 +82,15 @@ def generate_and_send_html_tables(self):
 
             # Create an EmailMultiAlternatives object
             from_email = settings.DEFAULT_FROM_EMAIL
-            email = EmailMultiAlternatives(subject, message, from_email, all_emails)
-            
-            # Attach the HTML content
-            email.attach_alternative(html_content, "text/html")
-
-            # Send the email
-            email.send()
+            for table in all_tables:
+                admin_email = table['admin_email']
+                email = EmailMultiAlternatives(subject, message, from_email, [admin_email])
+                
+                # Attach the HTML content
+                email.attach_alternative(html_content, "text/html")
+                
+                # Send the email
+                email.send()
 
     except Exception as e:
         logger.error(f"Error in generate_and_send_combined_html_tables: {e}")
