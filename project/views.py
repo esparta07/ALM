@@ -151,6 +151,8 @@ def company(request):
 @user_passes_test(check_role_admin)
 def company_profile(request, company_id):
     company = get_object_or_404(Company, id=company_id)
+    advs = Advs.objects.filter(company=company).order_by('-publish_date')
+    total_spend = int(advs.aggregate(total_balance=Sum('balance'))['total_balance'] or 0)
     officers = Officer.objects.filter(company=company)
     actions = Action.objects.filter(company=company).order_by('-date')
     user = request.user
@@ -179,6 +181,8 @@ def company_profile(request, company_id):
         'actions': actions,
         'form': form,
         'officer_form': officer_form,
+        'advs':advs,
+        'total_spend': total_spend,
     }
     return render(request, 'company_profile.html', context)
 
