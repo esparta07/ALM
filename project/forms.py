@@ -88,6 +88,7 @@ class OfficerForm(forms.ModelForm):
     class Meta:
         model = Officer
         fields = ['company', 'designation', 'name', 'phone', 'office', 'email']
+    additional_phones = forms.CharField(max_length=255, required=False, widget=forms.TextInput(attrs={'class': 'form-control'}))
 
     def __init__(self, *args, **kwargs):
         super(OfficerForm, self).__init__(*args, **kwargs)

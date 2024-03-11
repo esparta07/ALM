@@ -1,6 +1,6 @@
 from django.db.models import F, Sum
 from django.db.models.functions import Coalesce
-from .models import Advs,Newspaper,Province,District,Municipality,Company,Officer
+from .models import Advs,Newspaper,Province,District,Municipality,Company,Officer,PhoneNumber
 from account.models import ProvinceAdmin,Action
 from .forms import NewspaperForm,CompanyForm,PaperForm,ActionForm,OfficerForm
 from django.shortcuts import get_object_or_404, render, redirect
@@ -161,6 +161,7 @@ def company_profile(request, company_id):
     if request.method == 'POST':
         form = ActionForm(company, request.POST)
         officer_form = OfficerForm(request.POST, initial={'company': company})  # Initialize officer_form with POST data
+            
         if form.is_valid() :
             action = form.save(commit=False)
             action.company = company
@@ -220,6 +221,15 @@ def submit_officer_form(request):
 
         if form.is_valid():
             officer = form.save()
+
+            # Process additional phone numbers
+            additional_phones = request.POST.get('additional_phones', '')
+            additional_phone_list = additional_phones.split(',')
+
+            # Save additional phone numbers to PhoneNumber model
+            for additional_phone in additional_phone_list:
+                PhoneNumber.objects.create(officer=officer, phone=additional_phone.strip())
+            
             return JsonResponse({'status': 'success', 'message': 'Officer was added successfully'})
         else:
             return JsonResponse({'status': 'error', 'errors': form.errors.as_json()}, status=400)

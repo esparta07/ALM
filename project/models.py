@@ -57,6 +57,13 @@ class Officer(models.Model):
 
     def __str__(self):
         return f"{self.name}, {self.designation}"
+    
+class PhoneNumber(models.Model):
+    officer = models.ForeignKey(Officer, on_delete=models.CASCADE, related_name='phone_numbers')
+    phone = models.CharField(max_length=15)
+
+    def __str__(self):
+        return self.officer.name
 
 class Newspaper(models.Model):
     name = models.CharField(max_length=100)

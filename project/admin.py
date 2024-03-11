@@ -1,9 +1,13 @@
 from import_export import resources, fields , widgets
 from django.contrib import admin
-from .models import Province, District, Municipality, Company, Officer, Newspaper,Category,SubCategory,Advs
+from .models import Province, District, Municipality, Company, Officer, Newspaper,Category,SubCategory,Advs,PhoneNumber
 from import_export.admin import ImportExportModelAdmin
 from import_export.widgets import ForeignKeyWidget
 
+class PhoneResource(resources.ModelResource):
+    class Meta:
+        model = PhoneNumber
+        
 class ProvinceResource(resources.ModelResource):
     class Meta:
         model = Province
@@ -74,3 +78,7 @@ class SubCategoryAdmin(ImportExportModelAdmin):
 @admin.register(Advs)
 class AdvsAdmin(ImportExportModelAdmin):
     resource_class = AdvsResource
+    
+@admin.register(PhoneNumber)
+class PhoneAdmin(ImportExportModelAdmin):
+    resource_class = PhoneResource
