@@ -260,7 +260,11 @@
                                 <!-- Display officer details here -->
                                 Name: {{ officer.name }}<br>
                                 Designation: {{ officer.designation }}<br>
-                                Phone: {{ officer.phone }}<br>
+                                <!-- Display associated phone numbers -->
+                                Phone: {% for phone_number in officer.phone_numbers.all %}
+                                {{ phone_number.phone }}&nbsp;
+                                {% endfor %}
+                                <br>
                                 Email: {{ officer.email }}<br>
                             </div>
                         </div>

@@ -155,6 +155,7 @@ def company_profile(request, company_id):
     total_spend = int(advs.aggregate(total_balance=Sum('balance'))['total_balance'] or 0)
     officers = Officer.objects.filter(company=company)
     actions = Action.objects.filter(company=company).order_by('-date')
+    phone_numbers = PhoneNumber.objects.filter(officer__in=officers)
     user = request.user
     today = date.today()
 
@@ -184,6 +185,7 @@ def company_profile(request, company_id):
         'officer_form': officer_form,
         'advs':advs,
         'total_spend': total_spend,
+        'phone_numbers':phone_numbers
     }
     return render(request, 'company_profile.html', context)
 
