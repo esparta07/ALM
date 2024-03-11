@@ -87,7 +87,7 @@ class OfficerForm(forms.ModelForm):
 
     class Meta:
         model = Officer
-        fields = ['company', 'designation', 'name', 'phone', 'office', 'email']
+        fields = ['company', 'designation', 'name',  'office', 'email']
     additional_phones = forms.CharField(max_length=255, required=False, widget=forms.TextInput(attrs={'class': 'form-control'}))
 
     def __init__(self, *args, **kwargs):
@@ -97,7 +97,7 @@ class OfficerForm(forms.ModelForm):
         self.fields['company'].widget = forms.Select(attrs={'class': 'form-control'})
         self.fields['designation'].widget = forms.TextInput(attrs={'class': 'form-control'})
         self.fields['name'].widget = forms.TextInput(attrs={'class': 'form-control'})
-        self.fields['phone'].widget = forms.TextInput(attrs={'class': 'form-control'})  
+          
         self.fields['office'].widget = forms.TextInput(attrs={'class': 'form-control'})
         self.fields['email'].widget = forms.EmailInput(attrs={'class': 'form-control'})
 

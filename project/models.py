@@ -50,7 +50,6 @@ class Officer(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='officers')
     designation = models.CharField(max_length=100)
     name = models.CharField(max_length=100)
-    phone = models.CharField(max_length=15)
     office = models.CharField(max_length=100)
     email = models.EmailField()
     is_active=models.BooleanField(default=True)
