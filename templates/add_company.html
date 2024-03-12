@@ -30,7 +30,40 @@
           <button class="btn btn-primary ml-1" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
             <i class="mdi mdi-account"></i>&nbsp;ADD OFFICER
           </button>
+          <button type="button" class="btn btn-primary waves-effect waves-light" data-toggle="modal" data-target="#exampleModal">
+            <i class="fas fa-file-import"></i> Bulk Import
+        </button>
       </div>
+      <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Upload File</h5>
+                    <button type="button" class="close waves-effect waves-light" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                  <form id="uploadForm" method="POST"  action="{% url 'bulk_upload' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ bulkupload_form }}
+                    <br>
+                    <button type="submit" class="btn btn-warning" onclick="validateAndUpload()">Upload</button>
+                </form>
+                <br>
+                {% if error_message %}
+                    <div class="alert alert-danger show-notification" role="alert">
+                        <strong>{{ error_message }}</strong>
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                {% endif %}
+                </div>
+                
+            </div>
+        </div>
+    </div>
         
     </div>
     <div class="collapse mt-2" id="collapseExample">
@@ -141,6 +174,37 @@
 </div>
 <!-- end card -->
 
+<script>
+  //loader page
+  function startUpload() {
+      // Show loading overlay
+      document.body.classList.add('loading');
+      document.getElementById('loadingOverlay').style.display = 'flex';
+
+      // Simulate a delay (replace this with your actual file upload code)
+      setTimeout(function () {
+          // Hide loading overlay after the file is uploaded
+          document.body.classList.remove('loading');
+          document.getElementById('loadingOverlay').style.display = 'none';
+      }, 600000); 
+  }
+
+  // Validate and initiate upload
+  function validateAndUpload() {
+      // Check if a file is selected
+      var fileInput = document.querySelector('input[type="file"]');
+      if (fileInput.files.length > 0) {
+          // Call startUpload() function if a file is selected
+          startUpload();
+      } else {
+           // Display SweetAlert message when no file is selected
+           Swal.fire({
+              icon: 'error',
+              title: 'Please select a file before uploading.',
+          });
+      }
+  }
+</script>
 <script>
   $(document).ready(function() {
     // Province change event

@@ -103,7 +103,10 @@ class OfficerForm(forms.ModelForm):
 
         # Adding a queryset for the company field
         self.fields['company'].queryset = Company.objects.all()    
-        
+
+class BulkUploadForm(forms.Form):
+    file = forms.FileField(widget=forms.ClearableFileInput(attrs={'class': 'dropify'}))      
+
 class PaperForm(forms.ModelForm):
     TYPE_CHOICES = (
         ('National', 'National'),

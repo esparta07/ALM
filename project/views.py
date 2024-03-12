@@ -1,8 +1,8 @@
 from django.db.models import F, Sum
 from django.db.models.functions import Coalesce
-from .models import Advs,Newspaper,Province,District,Municipality,Company,Officer,PhoneNumber
+from .models import Advs,Newspaper,Province,District,Municipality,Company,Officer,PhoneNumber,Category,SubCategory
 from account.models import ProvinceAdmin,Action
-from .forms import NewspaperForm,CompanyForm,PaperForm,ActionForm,OfficerForm
+from .forms import NewspaperForm,CompanyForm,PaperForm,ActionForm,OfficerForm,BulkUploadForm
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib import messages
 from .filters import CompanyFilter
@@ -10,6 +10,7 @@ from django.http import JsonResponse,HttpResponse
 from datetime import date
 from account.utils import check_role_admin, check_role_user
 from django.contrib.auth.decorators import login_required, user_passes_test
+import pandas as pd
 
 def calculate_adv_spend(company_id):
     # Filter Advs by the given company_id and annotate with the spend of type * size
@@ -75,6 +76,7 @@ def add_company(request):
     if request.method == 'POST':
         form = CompanyForm(request.POST)
         officer_form = OfficerForm(request.POST)
+        bulkupload_form =BulkUploadForm(request.POST, request.FILES)
         if form.is_valid():
             # Save the form data if it's valid
             form.save()
@@ -85,9 +87,12 @@ def add_company(request):
         # If the request method is not POST, create an instance of the form
         form = CompanyForm()
         officer_form = OfficerForm()
+        bulkupload_form =BulkUploadForm()
+        
     context = {
         'form': form,
         'officer_form': officer_form,
+        'bulkupload_form':bulkupload_form,
     }
     return render(request, 'add_company.html', context)
 
@@ -237,6 +242,124 @@ def submit_officer_form(request):
             return JsonResponse({'status': 'error', 'errors': form.errors.as_json()}, status=400)
     
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+
+def bulk_upload(request):
+    if request.method == 'POST':
+        form = BulkUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            uploaded_file = request.FILES['file']
+            if not uploaded_file.name.endswith('.xlsx'):
+                messages.error(request, "Invalid file format. Please upload a .xlsx file.")
+                return redirect('add_company')
+
+            try:
+                excel_data = pd.read_excel(uploaded_file)
+
+                company_count = 0
+                officer_count = 0
+                error_list = []
+
+                for index, row in excel_data.iterrows():
+                    try:
+                        province_name = row['Province']
+                        district_name = row['District']
+                        municipality_name = row['Municipality']
+
+                        try:
+                            # Get existing Province
+                            province = Province.objects.get(name__iexact=province_name)
+                        except Province.DoesNotExist:
+                            # Create new Province if it doesn't exist
+                            province = Province.objects.create(name=province_name)
+
+                        try:
+                            # Get existing District within the Province
+                            district = District.objects.get(name__iexact=district_name, province=province)
+                        except District.DoesNotExist:
+                            # Create new District if it doesn't exist
+                            district = District.objects.create(name=district_name, province=province)
+
+                        try:
+                            # Get existing Municipality within the District
+                            municipality = Municipality.objects.get(name__iexact=municipality_name, district=district)
+                        except Municipality.DoesNotExist:
+                            # Create new Municipality if it doesn't exist
+                            municipality = Municipality.objects.create(name=municipality_name, district=district)
+
+                        # Get Category and SubCategory (case-insensitive)
+                        category = Category.objects.get(name__iexact=row['Category'])
+                        sub_category = SubCategory.objects.get(name__iexact=row['Sub Category'])
+
+                        # Create Company instance with foreign key relations
+                        company = Company.objects.create(
+                            name=row['Company'],
+                            category=category,
+                            sub_category=sub_category,
+                            province=province,
+                            district=district,
+                            municipality=municipality,
+                            website=row['Website'],
+                            address=row['Address'],
+                        )
+                        company_count += 1
+
+                        # Create Officer instances
+                        for i in range(1, 5):
+                            officer_name = row[f'Officer{i} Name']
+                            if officer_name:
+                                officer = Officer.objects.create(
+                                    company=company,
+                                    designation=row[f'Officer{i} Designation'],
+                                    name=officer_name,
+                                    office=row[f'Officer{i} Office'],
+                                    email=row[f'Officer{i} Email'],
+                                    is_active=True,  # You may want to change this based on your logic
+                                )
+
+                                # Create PhoneNumber instance if phone number exists
+                                phone_number = row[f'Officer{i} Phone']
+                                if phone_number:
+                                    PhoneNumber.objects.create(officer=officer, phone=phone_number)
+                                officer_count += 1
+
+                    except Province.DoesNotExist:
+                        error_message = f"Error processing row {index + 2}: Province '{row['Province']}' not found."
+                        error_list.append(error_message)
+                        print(error_message)
+                        continue  # Continue to the next iteration
+
+                    except District.DoesNotExist:
+                        error_message = f"Error processing row {index + 2}: District '{row['District']}' not found in {row['Province']}."
+                        error_list.append(error_message)
+                        print(error_message)
+                        continue  # Continue to the next iteration
+
+                    except Municipality.DoesNotExist:
+                        error_message = f"Error processing row {index + 2}: Municipality '{row['Municipality']}' not found in {row['District']}, {row['Province']}."
+                        error_list.append(error_message)
+                        print(error_message)
+                        continue  # Continue to the next iteration
+
+                    except (Category.DoesNotExist, SubCategory.DoesNotExist) as e:
+                        error_message = f"Error processing row {index + 2}: {e}"
+                        error_list.append(error_message)
+                        print(error_message)
+                        continue  # Continue to the next iteration
+
+                messages.success(request, f"Bulk upload successful. {company_count} companies and {officer_count} officers added.")
+                if error_list:
+                    messages.warning(request, "Some rows encountered errors. Check the error list.")
+                    print("Error List:", error_list)  # Print the list of errors in the terminal
+
+                return redirect('add_company')
+
+            except Exception as e:
+                messages.error(request, f"Error processing the file: {e}")
+                return redirect('add_company')
+
+    # Handle GET request or invalid form
+    return redirect('add_company')
+
 
 
 # from project.tasks import generate_and_send_html_tables
