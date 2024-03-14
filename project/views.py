@@ -361,6 +361,33 @@ def bulk_upload(request):
     return redirect('add_company')
 
 
+from django.http import JsonResponse
+from project.models import Company
+from django.db.models import Count
+
+
+
+def remove_duplicates(request):
+    if request.method == 'GET':
+        try:
+            # Get a list of all duplicate records based on all field values
+            duplicate_records = Company.objects.values('name', 'category', 'sub_category', 'province', 'district', 'municipality', 'website', 'address').annotate(record_count=Count('id')).filter(record_count__gt=1)
+
+            # Iterate through the duplicate records and keep one record, delete the rest
+            for record in duplicate_records:
+                # Get all duplicate records
+                duplicates = Company.objects.filter(name=record['name'], category=record['category'], sub_category=record['sub_category'], province=record['province'], district=record['district'], municipality=record['municipality'], website=record['website'], address=record['address'])
+                
+                # Keep the first record and delete the rest
+                for duplicate in duplicates[1:]:
+                    duplicate.delete()
+            
+            return JsonResponse({'status': 'success', 'message': 'Duplicate records removed successfully.'})
+        
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method. Only GET requests are allowed.'})
 
 # from project.tasks import generate_and_send_html_tables
 # def test_email_view(request):

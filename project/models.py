@@ -46,17 +46,7 @@ class Company(models.Model):
 
     def __str__(self):
         return self.name
-    @classmethod
-    def remove_duplicates(cls):
-        # Get all fields excluding the primary key
-        fields = [field.name for field in cls._meta.get_fields() if field.name != 'id']
-        # Identify duplicate records
-        duplicates = cls.objects.values(*fields).annotate(Count('id')).filter(id__count__gt=1)
-        # Loop through duplicate records and delete all but one instance
-        for duplicate in duplicates:
-            company_instances = cls.objects.filter(**duplicate)
-            first_instance = company_instances.first()
-            company_instances.exclude(pk=first_instance.pk).delete()
+    
 
 class Officer(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='officers')
