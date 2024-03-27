@@ -3,7 +3,7 @@ from django.contrib.auth.admin import UserAdmin
 from .models import User,ProvinceAdmin,Action
 
 class CustomUserAdmin(UserAdmin):
-    list_display = ('phone_number','role', 'is_active',)
+    list_display = ('full_name','phone_number','email','role', 'is_active',)
     ordering = ('-date_joined',)
     filter_horizontal = ()
     list_filter = ()
