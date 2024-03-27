@@ -8,9 +8,12 @@ from django.contrib import messages
 from .filters import CompanyFilter
 from django.http import JsonResponse,HttpResponse
 from datetime import date
-from account.utils import check_role_admin, check_role_user
+from account.utils import check_role_admin,check_role_superadmin,check_admin_super
 from django.contrib.auth.decorators import login_required, user_passes_test
 import pandas as pd
+from django.http import JsonResponse
+from project.models import Company
+from django.db.models import Count
 
 def calculate_adv_spend(company_id):
     # Filter Advs by the given company_id and annotate with the spend of type * size
@@ -72,6 +75,7 @@ def add_lead(request):
     return render(request, 'add_lead.html', context)
 
 @login_required(login_url='login')
+@user_passes_test(check_role_superadmin)
 def add_company(request):
     if request.method == 'POST':
         form = CompanyForm(request.POST)
@@ -97,6 +101,7 @@ def add_company(request):
     return render(request, 'add_company.html', context)
 
 @login_required(login_url='login')
+@user_passes_test(check_role_superadmin)
 def add_newspaper(request):
     if request.method == 'POST':
         form = PaperForm(request.POST)
@@ -116,7 +121,7 @@ def add_newspaper(request):
     return render(request, 'add_newspaper.html', context)
 
 @login_required(login_url='login')
-@user_passes_test(check_role_admin)
+@user_passes_test(check_admin_super)
 def company(request):
     admin = request.user
 
@@ -153,7 +158,7 @@ def company(request):
     return render(request, 'company_list.html', context)
 
 @login_required(login_url='login')
-@user_passes_test(check_role_admin)
+@user_passes_test(check_admin_super)
 def company_profile(request, company_id):
     company = get_object_or_404(Company, id=company_id)
     advs = Advs.objects.filter(company=company).order_by('-publish_date')
@@ -221,7 +226,7 @@ def profile(request):
     return render(request , 'profile.html')
 
 @login_required(login_url='login')
-@user_passes_test(check_role_admin)
+@user_passes_test(check_admin_super)
 def submit_officer_form(request):
     if request.method == 'POST':
         form = OfficerForm(request.POST)
@@ -360,13 +365,8 @@ def bulk_upload(request):
     # Handle GET request or invalid form
     return redirect('add_company')
 
-
-from django.http import JsonResponse
-from project.models import Company
-from django.db.models import Count
-
-
-
+@login_required(login_url='login')
+@user_passes_test(check_admin_super)
 def remove_duplicates(request):
     if request.method == 'GET':
         try:

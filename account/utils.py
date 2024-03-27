@@ -13,6 +13,8 @@ def detectUser(user):
             redirectUrl = 'account:admindashboard'
     elif user.role == User.AGENT:
         redirectUrl = 'account:agentdashboard'
+    elif user.role == User.SUPERADMIN:
+            redirectUrl = 'account:admindashboard'
                
     elif user.role == None and user.is_superuser:
         redirectUrl = '/admin'
@@ -44,6 +46,11 @@ def check_role_admin(user):
     else:
         raise PermissionDenied
 
+def check_role_superadmin(user):
+    if user.role == 3:
+        return True
+    else:
+        raise PermissionDenied
 
 # Restrict the customer from accessing the vendor page
 def check_role_user(user):
@@ -51,3 +58,9 @@ def check_role_user(user):
         return True
     else:
         raise PermissionDenied
+    
+def check_admin_super(user):
+    if user.role ==1 or user.role == 3:
+        return True
+    else:
+        raise PermissionDenied 

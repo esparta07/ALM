@@ -80,18 +80,33 @@
                             <div class="collapse navbar-collapse" id="topnav-menu-content">
                                 <ul class="navbar-nav">
                                     <li class="nav-item">
-                                        <a class="nav-link" 
-                                        href="{% if user.is_authenticated %}{% if user.role == user.ADMIN %}{% url 'account:admindashboard' %}
-                                        {% else %}
-                                        {% url 'account:userdashboard' %}{% endif %}{% else %}#{% endif %}">
+                                        <a class="nav-link" href="{% if user.is_authenticated %}
+                                            {% if user.role == user.ADMIN or user.role == user.SUPERADMIN %}
+                                                {% url 'account:admindashboard' %}
+                                            {% else %}
+                                                {% url 'account:agentdashboard' %}
+                                            {% endif %}
+                                        {% else %} 
+                                            # 
+                                        {% endif %}">
                                             <i class="mdi mdi-home-analytics"></i>Dashboard
                                         </a>
                                     </li>
+                                    {% if user.role == user.AGENT or user.role == user.SUPERADMIN %}
                                     <li class="nav-item">
                                         <a class="nav-link" href="{% url "add_lead" %}">
                                             <i class="mdi mdi-briefcase-search"></i>Add Lead
                                         </a>
                                     </li>
+                                    {% endif %}
+                                    {% if user.role == user.ADMIN or user.role == user.SUPERADMIN %}
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="{% url "company" %}">
+                                            <i class="mdi mdi-briefcase"></i>Company List
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                    {% if user.role == user.SUPERADMIN %}
                                     <li class="nav-item">
                                         <a class="nav-link" href="{% url "add_company" %}">
                                             <i class="mdi mdi-briefcase"></i>Add Company
@@ -100,12 +115,6 @@
                                     <li class="nav-item">
                                         <a class="nav-link" href="{% url "add_newspaper" %}">
                                             <i class="fas fa-newspaper"></i>Add Newspaper
-                                        </a>
-                                    </li>
-                                    {% if user.role == user.ADMIN %}
-                                    <li class="nav-item">
-                                        <a class="nav-link" href="{% url "company" %}">
-                                            <i class="mdi mdi-briefcase"></i>Company List
                                         </a>
                                     </li>
                                     {% endif %}

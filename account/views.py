@@ -49,16 +49,18 @@ def logout(request):
 
 #Dashboard Assign
 
+@login_required(login_url='login')
 def myAccount(request):
     user = request.user
     redirectUrl = detectUser(user)
     return redirect(redirectUrl)
 
-
+@login_required(login_url='login')
 def agentdashboard(request):
     
     return render(request, 'agent_dash.html')
 
+@login_required(login_url='login')
 def admindashboard(request):
    
     return render(request ,'admin_dash.html')

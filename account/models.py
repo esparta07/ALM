@@ -1,10 +1,9 @@
 from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
-from django.db.models.signals import post_save, pre_save
 from project.models import Province
 from django.contrib.auth import get_user_model
-from project.models import Company,Officer
+from django.db.models import Q
 
 # Create your models here.
 
@@ -31,10 +30,12 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser):
     ADMIN = 1
     AGENT = 2
+    SUPERADMIN = 3
 
     ROLE_CHOICES = (
         (ADMIN, 'ADMIN'),
         (AGENT, 'AGENT'),
+        (SUPERADMIN,'SUPERADMIN')
     )
     phone_number = models.CharField(max_length=50,unique=True)
     role = models.PositiveSmallIntegerField(choices=ROLE_CHOICES, blank=True, null=True)
@@ -67,13 +68,15 @@ class User(AbstractBaseUser):
             user_role = 'ADMIN'
         elif self.role == 2:
             user_role = 'AGENT'
+        elif self.role == 3:
+            user_role = 'SUPERADMIN'
         return user_role
     
 
 User = get_user_model()
 
 class ProvinceAdmin(models.Model):
-    admin = models.ManyToManyField(User, limit_choices_to={'role': User.ADMIN})
+    admin = models.ManyToManyField(User, limit_choices_to=Q(role=User.ADMIN) | Q(role=User.SUPERADMIN))
     province = models.ForeignKey(Province, on_delete=models.CASCADE)
 
     def __str__(self):
