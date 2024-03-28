@@ -35,7 +35,7 @@ class SubCategory(models.Model):
         return self.name
 
 class Company(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=200)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     sub_category = models.ForeignKey(SubCategory, on_delete=models.CASCADE)
     province = models.ForeignKey(Province, on_delete=models.CASCADE)
