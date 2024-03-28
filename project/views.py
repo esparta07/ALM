@@ -248,6 +248,9 @@ def submit_officer_form(request):
     
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
 
+from django.db import DataError
+import traceback
+
 def bulk_upload(request):
     if request.method == 'POST':
         form = BulkUploadForm(request.POST, request.FILES)
@@ -266,6 +269,8 @@ def bulk_upload(request):
 
                 for index, row in excel_data.iterrows():
                     try:
+                        company_name = row['Company']
+                        print(f"Processing row {index + 2}, Company: {company_name}")
                         province_name = row['Province']
                         district_name = row['District']
                         municipality_name = row['Municipality']
@@ -311,7 +316,7 @@ def bulk_upload(request):
                         # Create Officer instances
                         for i in range(1, 5):
                             officer_name = row[f'Officer{i} Name']
-                            if officer_name:
+                            if officer_name and not pd.isna(officer_name) and officer_name.strip():  # Check if officer name is not empty or NaN
                                 officer = Officer.objects.create(
                                     company=company,
                                     designation=row[f'Officer{i} Designation'],
@@ -358,9 +363,16 @@ def bulk_upload(request):
 
                 return redirect('add_company')
 
-            except Exception as e:
-                messages.error(request, f"Error processing the file: {e}")
+            except DataError as db_error:
+                traceback_str = traceback.format_exc()  # Get the traceback as a string
+                error_message = "Error processing the file: Value too long for a field."
+                print(error_message)
+                # Log the entire traceback for further analysis
+                print(traceback_str)
+                messages.error(request, error_message)
                 return redirect('add_company')
+
+           
 
     # Handle GET request or invalid form
     return redirect('add_company')
