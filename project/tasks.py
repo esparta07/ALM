@@ -9,6 +9,7 @@ from django.conf import settings
 import logging
 from django.template.loader import render_to_string
 from django.core.mail import EmailMultiAlternatives
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -17,6 +18,7 @@ User = get_user_model()
 
 @shared_task(bind=True)
 def generate_and_send_html_tables(self):
+    today = datetime.now()
     try:
         # Get all objects of Advs
         advs_data = Advs.objects.values(
@@ -27,7 +29,7 @@ def generate_and_send_html_tables(self):
             publish_frequency=Count('company'),
             budget_spent=Sum('balance'),
             size=Sum('size')
-        )
+        ).filter(publish_date = today)
 
         # Create a dictionary of DataFrames for each province
         province_tables = {}
@@ -42,6 +44,7 @@ def generate_and_send_html_tables(self):
 
             row_with_link = {'company_link': company_link, **row}
             province_tables[province_name].append(row_with_link)
+            
         # Fetch admin province objects
         admin_provinces = ProvinceAdmin.objects.all()
 
@@ -99,6 +102,7 @@ def generate_and_send_html_tables(self):
 
 @shared_task(bind=True)
 def generate_and_send_compiled_excel(self):
+    today = datetime.now()
     try:
         # Get all objects of Advs
         advs_data = Advs.objects.values(
@@ -109,7 +113,7 @@ def generate_and_send_compiled_excel(self):
             publish_frequency=Count('company'),
             budget_spent=Sum('balance'),
             size=Sum('size')
-        )
+        ).filter(publish_date = today)
 
         # Create a list of dictionaries containing the data
         table_content = []
