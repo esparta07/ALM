@@ -13,7 +13,7 @@ urlpatterns = [
    path('submit_officer_form/', views.submit_officer_form, name='submit_officer_form'),
    path('bulk_upload/', views.bulk_upload, name='bulk_upload'),
    path('remove_duplicates/', views.remove_duplicates, name='remove_duplicates'),
-   # path('test-email/', views.test_email_view, name='test_email'),
+   path('test-email/', views.test_email_view, name='test_email'),
    
 
    
