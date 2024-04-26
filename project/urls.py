@@ -14,6 +14,7 @@ urlpatterns = [
    path('bulk_upload/', views.bulk_upload, name='bulk_upload'),
    path('remove_duplicates/', views.remove_duplicates, name='remove_duplicates'),
    path('test-email/', views.test_email_view, name='test_email'),
+   path('lead_report/',views.lead_report,name='lead_report')
    
 
    

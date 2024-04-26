@@ -1,0 +1,167 @@
+
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css">
+<div class="col-xl-12">
+  <div class="card" style="background-color: rgba(255, 255, 255, 0.5); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-lg-6">
+                <h4><i class="mdi mdi-crosshairs-gps
+                    "></i>
+                    Lead Tracking</h4>
+            </div>
+            <div class="col-lg-6 text-right">
+                <button class="btn btn-primary ml-1" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+                    <i class="mdi mdi-filter"></i>&nbsp;Filters
+                </button>
+            </div>
+        </div>
+        
+            <div class="collapse mt-2" id="collapseExample">
+                <div class="card card-body"  style="background-color: rgba(255, 255, 255, 0.5);">
+                    <form method="get">
+                        <div class="form-row">
+                            <!-- First Row -->
+                            <div class="form-group col-md-3">
+                                {{ filter.form.company }}
+                            </div>
+                            <div class="form-group col-md-3">
+                                {{ filter.form.category }}
+                            </div>
+                            <div class="form-group col-md-3">
+                                {{ filter.form.province }}
+                            </div>
+                        </div>
+ 
+                            <!-- Date Range Input -->
+                            <div class="form-row">
+                                <!-- Date Range Picker Input Field -->
+                                <div class="form-group mb-3">
+                                    <label for="singledaterange">Date Range</label>
+                                    <input type="text" class="form-control" id="singledaterange" name="singledaterange" placeholder="2024-04-26 - 2024-04-26">
+                                </div>
+                            </div>
+                            
+                        <a class="text-danger mx-2" href="?{% for key in request.GET %}{% if key != 'page' %}&{{ key }}={% endif %}{% endfor %}">
+                            <b>Clear</b>
+                        </a>
+                        <button type="submit" class="btn btn-primary">Apply Filters</button>
+                      </form>
+                    
+                </div>
+              </div>
+               
+
+          <div class="row">
+              <div class="col-12">
+                <div class="table-responsive">
+                  <div class="card-body">
+                      <table id="auto-datatable" class="table custom-datatable">
+                          <thead>
+                            <tr style="background:#F9CF93;color:#5C5470; ">
+                                
+                                <th>Company</th> 
+                                <th>Date</th> 
+                                <th>Newspaper</th>
+                                <th>Type</th>
+                                <th>Size(CC)</th>
+                                <th>Amount</th>                            
+                          </tr>
+                          </thead>
+                          <tbody>
+                            {% for adv in ads %}
+                            <tr style="background-color: #F9E4C8;color:black;">
+                                <td><a href="{% url 'company_profile' company_id=adv.company.id %}">{{ adv.company.name }}</a></td>
+                                <td>{{ adv.publish_date }}</td>
+                                <td>{{ adv.newspaper.name }}</td>
+                                <td>{{ adv.adv_type }}</td>
+                                <td>{{ adv.size }}</td>
+                                <td>{{ adv.balance }}</td>
+                            </tr>
+                            {% endfor %}
+
+
+                          </tbody>
+                      </table>
+                      
+                  </div> <!-- end card body-->
+                </div> 
+              </div><!-- end col-->
+          </div>
+          <!-- end row-->
+
+      
+        
+    </div>
+    </div> <!-- end card-body-->
+    </div> <!-- end card-->
+</div> <!-- end col -->
+
+
+<script>
+    $(document).ready(function() {
+        // Initialize the Date Range Picker plugin with autoUpdateInput set to false
+        $('#singledaterange').daterangepicker({
+            autoUpdateInput: false, // Set autoUpdateInput to false to prevent default values from being set on load
+            autoApply: true, // Automatically apply the selected date range when closing the picker
+            locale: {
+                format: 'YYYY-MM-DD', // Set the date format
+                cancelLabel: 'Clear', // Set the label for the clear button
+                applyLabel: 'Apply', // Set the label for the apply button
+                customRangeLabel: 'Custom Range' // Set the label for the custom range option
+            }
+        });
+
+        // Handle the event when the date range is selected
+        $('#singledaterange').on('apply.daterangepicker', function(ev, picker) {
+            $(this).val(picker.startDate.format('YYYY-MM-DD') + ' - ' + picker.endDate.format('YYYY-MM-DD'));
+        });
+
+        // Handle the event when the clear button is clicked
+        $('#singledaterange').on('cancel.daterangepicker', function(ev, picker) {
+            $(this).val('');
+        });
+    });
+</script>
+
+
+
+
+
+
+<script>
+  $(document).ready(function () {
+      var customDatatable = $('.custom-datatable').DataTable({
+          "language": {
+              "paginate": {
+                  "previous": '<i class="mdi mdi-chevron-left"></i>',
+                  "next": '<i class="mdi mdi-chevron-right"></i>'
+              }
+          }
+      });
+
+      customDatatable.on('draw.dt', function () {
+          // Apply styling to make the background transparent after each draw
+          $('.custom-datatable_wrapper .paginate_button.previous, .custom-datatable_wrapper .paginate_button.next').css('background-color', 'transparent');
+      });
+  });
+</script>
+<style>
+  .custom-datatable_wrapper .paginate_button.previous,
+  .custom-datatable_wrapper .paginate_button.next {
+      background-color: transparent !important;
+  }
+</style>
+
+
+
+
+
+
+
+{% endblock content %}
+

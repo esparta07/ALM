@@ -5,7 +5,7 @@ from account.models import ProvinceAdmin,Action
 from .forms import NewspaperForm,CompanyForm,PaperForm,ActionForm,OfficerForm,BulkUploadForm
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib import messages
-from .filters import CompanyFilter
+from .filters import CompanyFilter,AdvsFilter
 from django.http import JsonResponse,HttpResponse
 from datetime import date
 from account.utils import check_role_admin,check_role_superadmin,check_admin_super
@@ -416,6 +416,48 @@ def test_email_view(request):
     except Exception as e:
         # Handle exceptions appropriately
         return HttpResponse(f"Error: {e}")
+    
+from datetime import datetime
+from django.shortcuts import render
+from .models import Advs
+from .filters import AdvsFilter  # Import your AdvsFilter class
+from django.utils import timezone
+
+def lead_report(request):
+    ads_filtered = Advs.objects.all()  # Start with all advertisements
+
+    # Process the date range filter
+    date_range = request.GET.get('singledaterange')
+    
+
+    if date_range:
+        start_date_str, end_date_str = date_range.split(' - ')
+        start_date = timezone.make_aware(datetime.strptime(start_date_str, '%Y-%m-%d'))
+        end_date = timezone.make_aware(datetime.strptime(end_date_str, '%Y-%m-%d'))
+
+        # Apply date range filtering
+        ads_filtered = ads_filtered.filter(publish_date__range=[start_date, end_date])
+
+    try:
+        # Apply AdvsFilter to the filtered queryset
+        ad_filter = AdvsFilter(request.GET, queryset=ads_filtered)
+        ads_filtered = ad_filter.qs
+
+    except ProvinceAdmin.DoesNotExist:
+        ads_filtered = Advs.objects.none()
+
+    context = {
+        'ads': ads_filtered,
+        'filter': ad_filter,
+    }
+    
+    return render(request, 'lead_report.html', context)
+
+
+
+
+
+
 
 
 
