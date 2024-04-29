@@ -138,13 +138,17 @@
 
 <script>
     function exportCSV() {
-        // Construct the URL for exporting CSV with current filter parameters
-        var url = window.location.href + '&export_csv=true';
+        // Get the base URL
+        var baseUrl = window.location.href.split('?')[0];
+        
+        // Construct the URL for exporting CSV with current filter parameters, if any
+        var url = baseUrl + '?export_csv=true';
         
         // Redirect to the CSV export URL
         window.location.href = url;
     }
 </script>
+
 
 
 
