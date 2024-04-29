@@ -13,11 +13,7 @@ from datetime import datetime
 import subprocess
 import os
 from datetime import datetime, timedelta
-
-
-
-
-
+from datetime import datetime
 
 
 
@@ -156,48 +152,6 @@ def generate_and_send_compiled_excel(self):
         return f"Error: {e}"
 
 
-# @shared_task(bind=True)
-# def backup_postgres(self):
-#     # Get database configuration from environment variables
-#     db_name = os.environ.get('DB_NAME')
-#     db_user = os.environ.get('DB_USER')
-#     db_password = os.environ.get('DB_PASSWORD')
-#     db_host = os.environ.get('DB_HOST')
-
-#     # Construct the backup file name with the current date and time
-#     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-#     backup_filename = f"backup_{timestamp}.sql"
-
-#     # Specify the path where the backup file will be saved
-#     backup_path = os.path.join(settings.BASE_DIR, 'backups', backup_filename)
-
-#     # Construct the pg_dump command
-#     pg_dump_cmd = [
-#         'pg_dump',
-#         '-U', db_user,
-#         '-d', db_name,
-#         '-h', db_host,
-#         '-p', '5432',  # Assuming default PostgreSQL port
-#         '-w',  # Suppress password prompts
-#         '-f', backup_path
-#     ]
-
-#     try:
-#         # Set the PGPASSWORD environment variable to pass the password
-#         os.environ['PGPASSWORD'] = db_password
-        
-#         # Execute the pg_dump command
-#         subprocess.run(pg_dump_cmd, check=True)
-#         print(f"Backup successful. Backup file saved to: {backup_path}")
-#     except subprocess.CalledProcessError as e:
-#         print(f"Backup failed: {e}")
-
-# if __name__ == "__main__":
-#     backup_postgres()
-
-
-
-
 @shared_task(bind=True)
 def backup_postgres(self):
     # Get database configuration from environment variables
@@ -205,15 +159,11 @@ def backup_postgres(self):
     db_user = os.environ.get('DB_USER')
     db_password = os.environ.get('DB_PASSWORD')
     db_host = os.environ.get('DB_HOST')
+    sender_email = os.environ.get('SENDER_EMAIL')
+    receiver_email = 'amail2manoj@gmail.com'
 
-    # Construct the backup file name with the current date and time
-    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-    backup_filename = f"backup_{timestamp}.sql"
-
-    # Specify the path where the backup file will be saved
-    backup_dir = os.path.join(settings.BASE_DIR, 'backups')
-    os.makedirs(backup_dir, exist_ok=True)
-    backup_path = os.path.join(backup_dir, backup_filename)
+    # Construct the backup file name with the current date
+    backup_filename = datetime.now().strftime('%Y%m%d') + '-backup.sql'
 
     # Construct the pg_dump command
     pg_dump_cmd = [
@@ -223,28 +173,39 @@ def backup_postgres(self):
         '-h', db_host,
         '-p', '5432',  # Assuming default PostgreSQL port
         '-w',  # Suppress password prompts
-        '-f', backup_path
     ]
 
     try:
         # Set the PGPASSWORD environment variable to pass the password
         os.environ['PGPASSWORD'] = db_password
         
-        # Execute the pg_dump command
-        subprocess.run(pg_dump_cmd, check=True)
-        print(f"Backup successful. Backup file saved to: {backup_path}")
+        # Execute the pg_dump command and capture the output
+        backup_output = subprocess.check_output(pg_dump_cmd)
+        print("Backup successful")
 
-        # Delete backups older than 15 days
-        threshold = datetime.now() - timedelta(days=15)
-        for filename in os.listdir(backup_dir):
-            file_path = os.path.join(backup_dir, filename)
-            if os.path.isfile(file_path) and os.path.getctime(file_path) < threshold.timestamp():
-                os.remove(file_path)
-                print(f"Deleted old backup file: {file_path}")
+        # Send email with backup content as attachment
+        send_email(sender_email, receiver_email, backup_output, backup_filename)
 
     except subprocess.CalledProcessError as e:
         print(f"Backup failed: {e}")
 
-if __name__ == "__main__":
-    backup_postgres()
+def send_email(sender_email, receiver_email, backup_content, backup_filename):
+    # Create email message
+    subject = "Database Backup"
+    current_date = datetime.now().strftime('%Y-%m-%d')
+    body = f"Please find attached the latest database backup on Date: {current_date}"
+    email = EmailMessage(subject, body, sender_email, [receiver_email])
+
+    # Attach backup content as attachment
+    email.attach(backup_filename, backup_content, "application/octet-stream")
+
+    # Set email configuration from Django settings
+    email.host = settings.EMAIL_HOST
+    email.port = settings.EMAIL_PORT
+    email.username = settings.EMAIL_HOST_USER
+    email.password = settings.EMAIL_HOST_PASSWORD
+
+    # Send email
+    email.send()
+
 
