@@ -10,6 +10,16 @@ import logging
 from django.template.loader import render_to_string
 from django.core.mail import EmailMultiAlternatives
 from datetime import datetime
+import subprocess
+import os
+from datetime import datetime, timedelta
+
+
+
+
+
+
+
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -95,6 +105,7 @@ def generate_and_send_html_tables(self):
         logger.error(f"Error in generate_and_send_html_tables: {e}")
         raise
 
+
 @shared_task(bind=True)
 def generate_and_send_compiled_excel(self):
     today = datetime.now()
@@ -143,4 +154,97 @@ def generate_and_send_compiled_excel(self):
     except Exception as e:
         logger.error(f"Error in generate_and_send_compiled_excel: {e}", exc_info=True)
         return f"Error: {e}"
+
+
+# @shared_task(bind=True)
+# def backup_postgres(self):
+#     # Get database configuration from environment variables
+#     db_name = os.environ.get('DB_NAME')
+#     db_user = os.environ.get('DB_USER')
+#     db_password = os.environ.get('DB_PASSWORD')
+#     db_host = os.environ.get('DB_HOST')
+
+#     # Construct the backup file name with the current date and time
+#     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+#     backup_filename = f"backup_{timestamp}.sql"
+
+#     # Specify the path where the backup file will be saved
+#     backup_path = os.path.join(settings.BASE_DIR, 'backups', backup_filename)
+
+#     # Construct the pg_dump command
+#     pg_dump_cmd = [
+#         'pg_dump',
+#         '-U', db_user,
+#         '-d', db_name,
+#         '-h', db_host,
+#         '-p', '5432',  # Assuming default PostgreSQL port
+#         '-w',  # Suppress password prompts
+#         '-f', backup_path
+#     ]
+
+#     try:
+#         # Set the PGPASSWORD environment variable to pass the password
+#         os.environ['PGPASSWORD'] = db_password
+        
+#         # Execute the pg_dump command
+#         subprocess.run(pg_dump_cmd, check=True)
+#         print(f"Backup successful. Backup file saved to: {backup_path}")
+#     except subprocess.CalledProcessError as e:
+#         print(f"Backup failed: {e}")
+
+# if __name__ == "__main__":
+#     backup_postgres()
+
+
+
+
+@shared_task(bind=True)
+def backup_postgres(self):
+    # Get database configuration from environment variables
+    db_name = os.environ.get('DB_NAME')
+    db_user = os.environ.get('DB_USER')
+    db_password = os.environ.get('DB_PASSWORD')
+    db_host = os.environ.get('DB_HOST')
+
+    # Construct the backup file name with the current date and time
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    backup_filename = f"backup_{timestamp}.sql"
+
+    # Specify the path where the backup file will be saved
+    backup_dir = os.path.join(settings.BASE_DIR, 'backups')
+    os.makedirs(backup_dir, exist_ok=True)
+    backup_path = os.path.join(backup_dir, backup_filename)
+
+    # Construct the pg_dump command
+    pg_dump_cmd = [
+        'pg_dump',
+        '-U', db_user,
+        '-d', db_name,
+        '-h', db_host,
+        '-p', '5432',  # Assuming default PostgreSQL port
+        '-w',  # Suppress password prompts
+        '-f', backup_path
+    ]
+
+    try:
+        # Set the PGPASSWORD environment variable to pass the password
+        os.environ['PGPASSWORD'] = db_password
+        
+        # Execute the pg_dump command
+        subprocess.run(pg_dump_cmd, check=True)
+        print(f"Backup successful. Backup file saved to: {backup_path}")
+
+        # Delete backups older than 15 days
+        threshold = datetime.now() - timedelta(days=15)
+        for filename in os.listdir(backup_dir):
+            file_path = os.path.join(backup_dir, filename)
+            if os.path.isfile(file_path) and os.path.getctime(file_path) < threshold.timestamp():
+                os.remove(file_path)
+                print(f"Deleted old backup file: {file_path}")
+
+    except subprocess.CalledProcessError as e:
+        print(f"Backup failed: {e}")
+
+if __name__ == "__main__":
+    backup_postgres()
 

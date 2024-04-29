@@ -1,19 +1,19 @@
-from django.db.models import F, Sum
-from django.db.models.functions import Coalesce
-from .models import Advs,Newspaper,Province,District,Municipality,Company,Officer,PhoneNumber,Category,SubCategory
-from account.models import ProvinceAdmin,Action
-from .forms import NewspaperForm,CompanyForm,PaperForm,ActionForm,OfficerForm,BulkUploadForm
-from django.shortcuts import get_object_or_404, render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from .filters import CompanyFilter,AdvsFilter
-from django.http import JsonResponse,HttpResponse
-from datetime import date
-from account.utils import check_role_admin,check_role_superadmin,check_admin_super
+from django.http import JsonResponse, HttpResponse
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.db.models import F, Sum, Count
+from django.db.models.functions import Coalesce
+from django.utils import timezone
+from datetime import datetime, date
+import csv
 import pandas as pd
-from django.http import JsonResponse
+from .models import Advs, Newspaper, Province, District, Municipality, Company, Officer, PhoneNumber, Category, SubCategory
+from .forms import NewspaperForm, CompanyForm, PaperForm, ActionForm, OfficerForm, BulkUploadForm
+from .filters import CompanyFilter, AdvsFilter
+from account.models import ProvinceAdmin, Action
+from account.utils import check_role_admin, check_role_superadmin, check_admin_super
 from project.models import Company
-from django.db.models import Count
 
 def calculate_adv_spend(company_id):
     # Filter Advs by the given company_id and annotate with the spend of type * size
@@ -402,34 +402,12 @@ def remove_duplicates(request):
     return JsonResponse({'status': 'error', 'message': 'Invalid request method. Only GET requests are allowed.'})
 
 
-from project.tasks import generate_and_send_html_tables
-@login_required(login_url='login')
-@user_passes_test(check_role_superadmin)
-def test_email_view(request):
-    try:
-        # Call the Celery task
-        generate_and_send_html_tables.delay()
-
-        # You can customize the response message if needed
-        return HttpResponse("Email task is being processed. Check your email.")
-
-    except Exception as e:
-        # Handle exceptions appropriately
-        return HttpResponse(f"Error: {e}")
-    
-from datetime import datetime
-from django.shortcuts import render
-from .models import Advs
-from .filters import AdvsFilter  # Import your AdvsFilter class
-from django.utils import timezone
-
 def lead_report(request):
     ads_filtered = Advs.objects.all()  # Start with all advertisements
 
     # Process the date range filter
     date_range = request.GET.get('singledaterange')
     
-
     if date_range:
         start_date_str, end_date_str = date_range.split(' - ')
         start_date = timezone.make_aware(datetime.strptime(start_date_str, '%Y-%m-%d'))
@@ -446,12 +424,79 @@ def lead_report(request):
     except ProvinceAdmin.DoesNotExist:
         ads_filtered = Advs.objects.none()
 
+
+    # CSV export logic
+    if 'export_csv' in request.GET:
+        # Aggregate data by company
+        company_data = {}
+        for adv in ads_filtered:
+            company_name = adv.company.name
+            size = adv.size
+            amount = adv.balance  # Assuming `balance` field represents the amount
+            
+            if company_name in company_data:
+                company_data[company_name]['size'] += size
+                company_data[company_name]['amount'] += amount
+            else:
+                company_data[company_name] = {'size': size, 'amount': amount}
+        
+        # Create the CSV response
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="advertisements_by_company.csv"'
+        
+        # Write CSV header
+        writer = csv.writer(response)
+        writer.writerow(['Company', 'Size', 'Amount'])
+        
+        # Write aggregated data for each company
+        for company_name, data in company_data.items():
+            writer.writerow([company_name, data['size'], data['amount']])
+        
+        return response
+
+    # If export is not requested, render the HTML page
     context = {
         'ads': ads_filtered,
         'filter': ad_filter,
     }
     
     return render(request, 'lead_report.html', context)
+
+
+
+
+
+# from project.tasks import generate_and_send_html_tables
+# @login_required(login_url='login')
+# @user_passes_test(check_role_superadmin)
+# def test_email_view(request):
+#     try:
+#         # Call the Celery task
+#         generate_and_send_html_tables.delay()
+
+#         # You can customize the response message if needed
+#         return HttpResponse("Email task is being processed. Check your email.")
+
+#     except Exception as e:
+#         # Handle exceptions appropriately
+#         return HttpResponse(f"Error: {e}")
+    
+
+
+
+# from project.tasks import backup_postgres
+# def backup(request):
+#     try:
+#         # Call the Celery task
+#         backup_postgres.delay()
+
+#         # You can customize the response message if needed
+#         return HttpResponse("Backup is being processed")
+
+#     except Exception as e:
+#         # Handle exceptions appropriately
+#         return HttpResponse(f"Error: {e}")
+    
 
 
 
