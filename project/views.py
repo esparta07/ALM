@@ -401,9 +401,11 @@ def remove_duplicates(request):
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method. Only GET requests are allowed.'})
 
+from collections import Counter
 
 def lead_report(request):
-    ads_filtered = Advs.objects.all()  # Start with all advertisements
+    # Get all advertisements
+    ads_filtered = Advs.objects.all()
 
     # Process the date range filter
     date_range = request.GET.get('singledaterange')
@@ -416,23 +418,22 @@ def lead_report(request):
         # Apply date range filtering
         ads_filtered = ads_filtered.filter(publish_date__range=[start_date, end_date])
 
-    try:
-        # Apply AdvsFilter to the filtered queryset
-        ad_filter = AdvsFilter(request.GET, queryset=ads_filtered)
-        ads_filtered = ad_filter.qs
-
-    except ProvinceAdmin.DoesNotExist:
-        ads_filtered = Advs.objects.none()
-
+    # Apply AdvsFilter to the filtered queryset
+    ad_filter = AdvsFilter(request.GET, queryset=ads_filtered)
+    ads_filtered = ad_filter.qs
 
     # CSV export logic
     if 'export_csv' in request.GET:
         # Aggregate data by company
         company_data = {}
+        company_frequency = Counter()  # Counter to count frequency
+        
         for adv in ads_filtered:
             company_name = adv.company.name
             size = adv.size
             amount = adv.balance  # Assuming `balance` field represents the amount
+            
+            company_frequency[company_name] += 1  # Increment frequency
             
             if company_name in company_data:
                 company_data[company_name]['size'] += size
@@ -446,11 +447,12 @@ def lead_report(request):
         
         # Write CSV header
         writer = csv.writer(response)
-        writer.writerow(['Company', 'Size', 'Amount'])
+        writer.writerow(['Company', 'Frequency', 'Size', 'Amount'])  # Include 'Frequency' header
         
         # Write aggregated data for each company
         for company_name, data in company_data.items():
-            writer.writerow([company_name, data['size'], data['amount']])
+            frequency = company_frequency[company_name]
+            writer.writerow([company_name, frequency, data['size'], data['amount']])
         
         return response
 
