@@ -290,32 +290,27 @@
                 <div class="card-body">
                     <table id="auto-datatable" class="table custom-datatable">
                         <thead>
-                          <tr style="background:#124076;color:white; ">
-
-                              <th>Date</th> 
-                              <th>Newspaper</th>
-                              <th>Type</th>
-                              <th>Size(CC)</th>
-                              <th>Amount</th>
-                                                            
-                        </tr>
+                            <tr style="background:#124076;color:white;">
+                                <th>Date</th>
+                                <th>Newspaper</th>
+                                <th>Type</th>
+                                <th>Size(CC)</th>
+                                <th>Amount</th>
+                            </tr>
                         </thead>
                         <tbody>
-                          {% for adv in advs %}
-                                
-                          <tr style="background-color: #F9E4C8;color:black;">
-                            
-                          
-                          <td>{{adv.publish_date}}</td>
-                          <td>{{adv.newspaper}}</td>
-                          <td>{{adv.adv_type}}</td>
-                          <td>{{adv.size}}</td>
-                          <td>{{adv.balance}}</td>
-                          </tr>
-                          
-                          {% endfor %}
+                            {% for adv in advs %}
+                            <tr style="background-color: #F9E4C8;color:black;">
+                                <td>{{ adv.publish_date|date:"Y-m-d" }}</td>
+                                <td>{{ adv.newspaper }}</td>
+                                <td>{{ adv.adv_type }}</td>
+                                <td>{{ adv.size }}</td>
+                                <td>{{ adv.balance }}</td>
+                            </tr>
+                            {% endfor %}
                         </tbody>
                     </table>
+                    
                     
                 </div> <!-- end card body-->
               </div> 
@@ -355,6 +350,9 @@
 <script>
     $(document).ready(function () {
         var customDatatable = $('.custom-datatable').DataTable({
+            "columnDefs": [
+                { "type": "date", "targets": 0 }  // Ensuring the first column is treated as a date
+            ],
             "language": {
                 "paginate": {
                     "previous": '<i class="mdi mdi-chevron-left"></i>',
@@ -362,12 +360,13 @@
                 }
             }
         });
-  
+    
         customDatatable.on('draw.dt', function () {
             // Apply styling to make the background transparent after each draw
             $('.custom-datatable_wrapper .paginate_button.previous, .custom-datatable_wrapper .paginate_button.next').css('background-color', 'transparent');
         });
     });
-  </script>
+    </script>
+    
 
 {% endblock content %}
